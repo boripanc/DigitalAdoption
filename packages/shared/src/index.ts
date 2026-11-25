@@ -10,7 +10,10 @@ export interface Step {
   text: string;
   /** Lower-case tag name of the element, e.g. "button". */
   tag: string;
-  /** Page URL where the step was recorded. */
+  /**
+   * Top-level page URL where the step was recorded. Steps of one flow can be on different web apps
+   * and domains (a guide can start in SAP Fiori and continue in another app).
+   */
   url: string;
   title: string;
   body: string;
@@ -19,6 +22,12 @@ export interface Step {
    * iframe. Empty or missing when the element is in the top page. (Fiori launchpads often open apps in an iframe.)
    */
   frames?: string[];
+  /**
+   * Origin of the cross-origin iframe the element is in (e.g. "https://apps.example.com"), when the
+   * top page can't reach into that iframe directly. `frames` is then relative to that iframe.
+   * Fiori launchpads sometimes host apps from another domain this way.
+   */
+  frameOrigin?: string;
   /** What the element is in SAPUI5 / OpenUI5 terms, recorded on UI5 apps such as SAP Fiori. */
   ui5?: Ui5Info;
 }
@@ -50,7 +59,7 @@ export interface Flow {
   id: string;
   workspaceId: string;
   name: string;
-  /** Host the flow runs on, e.g. "app.example.com". */
+  /** Host the flow starts on, e.g. "app.example.com". Later steps can be on other hosts (see Step.url). */
   host: string;
   status: FlowStatus;
   steps: Step[];

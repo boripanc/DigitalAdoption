@@ -90,3 +90,5 @@ table.grid { width: 100%; border-collapse: collapse; background: var(--panel); b
   .add-member .form-row { grid-template-columns: 1fr; }
   .grid th:nth-child(n+5), .grid td:nth-child(n+5) { display: none; }
 }
+
+.step-app { display: inline-block; font-size: 12px; color: #4b5563; background: #f3f4f6; border-radius: 999px; padding: 1px 8px; margin: 6px 6px 0 0; }

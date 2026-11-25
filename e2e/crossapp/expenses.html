@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<!-- App 2 of the cross-application test, served on http://127.0.0.1:8772 (another origin). -->
+<head>
+  <meta charset="utf-8">
+  <title>Expenses</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+    header { background: #0b7a53; color: #fff; padding: 14px 20px; font-size: 18px; }
+    main { padding: 20px; }
+    button { font: inherit; padding: 8px 14px; border-radius: 6px; border: 1px solid #0b7a53; background: #fff; cursor: pointer; }
+    button.primary { background: #0b7a53; color: #fff; }
+    form { margin-top: 16px; display: none; gap: 8px; align-items: center; }
+    form.open { display: flex; }
+    #done { color: #0b7a53; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <header>Expenses</header>
+  <main>
+    <button id="new" class="primary">New expense</button>
+    <form id="form" onsubmit="return false">
+      <label for="amount">Amount</label><input id="amount" placeholder="0.00">
+      <button id="submit" class="primary" type="button">Submit claim</button>
+    </form>
+    <div id="done"></div>
+  </main>
+  <script>
+    document.getElementById('new').onclick = () => document.getElementById('form').classList.add('open');
+    document.getElementById('submit').onclick = () => {
+      window.__submitted = (window.__submitted || 0) + 1;
+      document.getElementById('done').textContent = 'Claim submitted';
+    };
+  </script>
+</body>
+</html>

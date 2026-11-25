@@ -87,6 +87,22 @@ describe('flows, roles and analytics', () => {
     await call('DELETE', `/flows/${r.body.id}`, owner);
   });
 
+  it('keeps steps on several apps, including ones in a cross-origin iframe', async () => {
+    const steps = [
+      { ...step(1), url: 'https://portal.test/home' },
+      { ...step(2), url: 'https://portal.test/home', frameOrigin: 'https://expenses.test' },
+      { ...step(3), url: 'https://expenses.test/new' },
+    ];
+    const r = await call('POST', '/flows', owner, { name: 'Cross-app', host: 'portal.test', steps });
+    expect(r.status).toBe(201);
+    const got = (await call('GET', `/flows/${r.body.id}`, owner)).body.steps;
+    expect(got.map((s: { url: string }) => s.url)).toEqual(steps.map((s) => s.url));
+    expect(got[1].frameOrigin).toBe('https://expenses.test');
+    const bad = await call('POST', '/flows', owner, { name: 'Bad', host: 'portal.test', steps: [{ ...step(1), frameOrigin: 'javascript:alert(1)' }] });
+    expect(bad.status).toBe(400);
+    await call('DELETE', `/flows/${r.body.id}`, owner);
+  });
+
   it('keeps workspaces apart', async () => {
     const other = await signup('someone@initech.test', 'Initech');
     expect((await call('GET', '/flows', other)).body).toHaveLength(0);

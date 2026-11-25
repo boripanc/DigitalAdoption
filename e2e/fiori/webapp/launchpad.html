@@ -1,7 +1,8 @@
 <!doctype html>
 <html>
 <!-- A stand-in for an iframe-based Fiori launchpad: a shell page that routes by hash
-     (#Shell-home, #PurchaseOrder-manage) and opens the app in a same-origin iframe. -->
+     (#Shell-home, #PurchaseOrder-manage) and opens the app in an iframe. The iframe is same-origin,
+     or on another origin with ?appOrigin=http://127.0.0.1:8766 (apps served from another domain). -->
 <head>
   <meta charset="utf-8">
   <title>Home</title>
@@ -29,7 +30,8 @@
           const f = document.createElement('iframe');
           f.id = 'application-PurchaseOrder-manage';
           f.className = 'sapUShellApplicationContainer';
-          f.src = 'index.html' + location.search;
+          const appOrigin = new URLSearchParams(location.search).get('appOrigin');
+          f.src = (appOrigin ? appOrigin + '/' : '') + 'index.html' + location.search;
           main.appendChild(f);
         }
       } else {

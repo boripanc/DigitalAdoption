@@ -47,6 +47,15 @@ export function FlowPage({ id, me }: { id: string; me: Me }) {
     setSteps(next);
   };
 
+  // A guide can span several web apps; then say which app each step is in.
+  const appOf = (s: Step) => {
+    try {
+      return s.frameOrigin ? `${new URL(s.url).host} › ${new URL(s.frameOrigin).host}` : new URL(s.url).host;
+    } catch {
+      return '';
+    }
+  };
+  const multiApp = new Set(steps.map(appOf)).size > 1;
   const maxViews = Math.max(1, stats?.starts ?? 0, ...(stats?.stepViews ?? [0]));
   const worst = stats ? stats.exits.reduce((w, n, i) => (n > (stats.exits[w] ?? 0) ? i : w), 0) : 0;
 
@@ -107,6 +116,7 @@ export function FlowPage({ id, me }: { id: string; me: Me }) {
                 ) : (
                   <><b>{s.title}</b><p>{s.body}</p></>
                 )}
+                {multiApp && <span className="step-app" title={s.url}>{appOf(s)}</span>}
                 <code title="Element this step points at">{s.selector}</code>
               </div>
               {editor && (

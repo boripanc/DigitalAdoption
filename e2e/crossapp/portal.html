@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+<!-- App 1 of the cross-application test, served on http://localhost:8771: an employee portal that
+     opens the expenses app (another origin) in a new tab. -->
+<head>
+  <meta charset="utf-8">
+  <title>Employee Portal</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #eef2f7; }
+    header { background: #12355b; color: #fff; padding: 14px 20px; font-size: 18px; }
+    main { padding: 24px; display: flex; gap: 16px; }
+    .tile { background: #fff; border-radius: 12px; padding: 16px; width: 220px; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+    .tile a { display: inline-block; margin-top: 10px; background: #12355b; color: #fff; padding: 8px 12px; border-radius: 6px; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header>Employee Portal</header>
+  <main>
+    <div class="tile"><b>Leave</b><p>Request time off.</p><a href="#leave">Open Leave</a></div>
+    <div class="tile"><b>Expenses</b><p>Claim travel and meals.</p><a id="openExpenses" href="http://127.0.0.1:8772/expenses.html" target="_blank">Open Expenses</a></div>
+  </main>
+</body>
+</html>
