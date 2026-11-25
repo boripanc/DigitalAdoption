@@ -75,6 +75,18 @@ describe('flows, roles and analytics', () => {
     expect((await call('GET', '/flows?host=other.test', viewer)).body).toHaveLength(0);
   });
 
+  it('keeps the iframe path and UI5 control info of SAP Fiori steps', async () => {
+    const fiori = {
+      ...step(1),
+      frames: ['#application-PurchaseOrder-manage'],
+      ui5: { type: 'sap.m.Input', id: 'detail--note', view: 'po.view.Detail', label: 'Approval note', bindings: { value: 'note' }, context: '/orders/1' },
+    };
+    const r = await call('POST', '/flows', owner, { name: 'Fiori', host: 'fiori.test', steps: [fiori] });
+    expect(r.status).toBe(201);
+    expect((await call('GET', `/flows/${r.body.id}`, owner)).body.steps[0]).toMatchObject({ frames: fiori.frames, ui5: fiori.ui5 });
+    await call('DELETE', `/flows/${r.body.id}`, owner);
+  });
+
   it('keeps workspaces apart', async () => {
     const other = await signup('someone@initech.test', 'Initech');
     expect((await call('GET', '/flows', other)).body).toHaveLength(0);

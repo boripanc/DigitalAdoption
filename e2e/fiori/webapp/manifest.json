@@ -1,0 +1,17 @@
+{
+  "_version": "1.42.0",
+  "sap.app": { "id": "po", "type": "application", "title": "Manage Purchase Orders", "applicationVersion": { "version": "1.0.0" } },
+  "sap.ui5": {
+    "rootView": { "viewName": "po.view.App", "type": "XML", "id": "app" },
+    "dependencies": { "minUI5Version": "1.108", "libs": { "sap.m": {}, "sap.ui.core": {} } },
+    "models": { "": { "type": "sap.ui.model.json.JSONModel", "uri": "model/orders.json" } },
+    "routing": {
+      "config": { "routerClass": "sap.m.routing.Router", "type": "View", "viewType": "XML", "path": "po.view", "controlId": "app", "controlAggregation": "pages", "async": true },
+      "routes": [
+        { "pattern": "", "name": "list", "target": "list" },
+        { "pattern": "orders/{id}", "name": "detail", "target": "detail" }
+      ],
+      "targets": { "list": { "id": "list", "name": "List" }, "detail": { "id": "detail", "name": "Detail" } }
+    }
+  }
+}

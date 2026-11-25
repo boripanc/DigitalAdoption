@@ -25,6 +25,22 @@ An original digital adoption platform, sold as SaaS: authors record in-app walkt
 
 Only the extension's background worker talks to the API; the page you're guiding never sees the token. All extension UI is drawn inside a Shadow DOM so the host app's styles can't break it.
 
+## SAP Fiori and other SAPUI5 / OpenUI5 apps
+
+Guidepost works on SAP Fiori apps, including apps opened from a Fiori launchpad. Three things make that work:
+
+- **UI5-aware targets.** UI5 generates DOM ids such as `__button12` or `__xmlview0--save` that change between sessions and between launchpad and standalone starts. On UI5 pages a small script that runs in the page's own world (`apps/extension/src/ui5bridge.ts`) tells the recorder which control was clicked: its class (`sap.m.Button`), the stable part of its id when the developer gave it one (`detail--note`), its view, text, icon, tooltip, label and data bindings. Playback scores every visible control of that class against this description, then falls back to the CSS selector and the visible text. A click on text inside a table row records the row, and a click on a button's inner `<bdi>` records the button.
+- **Launchpad iframes.** Newer launchpads open apps in an iframe. The recorder and player work in the top page and in every same-origin iframe, and a step remembers which iframe it was in.
+- **Hash routing.** Fiori apps change pages through the URL hash without reloading. When a step's element isn't there yet (route change, app still loading in the iframe), the player keeps looking and shows the step as soon as it appears. If UI5 re-renders the control, the highlight finds it again.
+
+Not supported yet: cross-origin iframes (an app served from a different host than the launchpad) and SAP GUI for HTML (WebGUI) transactions, which are not UI5.
+
+| Recording in a Fiori app | Playback inside a launchpad iframe |
+| --- | --- |
+| ![Recording](docs/screenshots/fiori-recording.png) | ![Playback](docs/screenshots/fiori-launchpad-playback.png) |
+
+`e2e/fiori` is a small Fiori-style OpenUI5 app (list, detail page, hash routes) plus a stand-in launchpad page that opens it in an iframe. `npm run fiori:serve` serves it at http://localhost:8766/index.html and http://localhost:8766/launchpad.html with UI5 Tooling, which downloads OpenUI5 from npm. Add `?shift=3` to change every generated id.
+
 ## Run it locally
 
 Requires Node 20+.
@@ -47,6 +63,7 @@ npm run typecheck
 npm test             # API tests on an in-memory database
 TEST_DATABASE_URL=postgres://… npm test -w @guidepost/api   # same tests on real Postgres
 npm run build && npm run test:e2e   # full flow in Chromium: sign up, record, publish, play, analytics
+npm run test:e2e:fiori              # record and play on the OpenUI5 app, standalone and inside a launchpad iframe
 ```
 
 The end-to-end test saves screenshots to `e2e/screenshots/`.
@@ -71,5 +88,5 @@ All routes except `/auth/*` and `/health` need `Authorization: Bearer <token>`.
 ## Roadmap
 
 - **Now (MVP):** workspaces and roles, recorder, player, publish, analytics.
-- **Next (pilot):** auto-start rules (first visit, URL match), invite links and password reset, flow versioning, iframe support, Chrome Web Store listing, hosted deployment.
+- **Next (pilot):** auto-start rules (first visit, URL match), invite links and password reset, flow versioning, cross-origin iframes, Chrome Web Store listing, hosted deployment.
 - **Later:** onboarding checklists, smart tips, announcements, a resource center, billing.

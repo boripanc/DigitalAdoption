@@ -1,0 +1,30 @@
+<mvc:View xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m" controllerName="po.controller.List">
+  <Page id="listPage" title="Purchase Orders">
+    <headerContent>
+      <Button icon="sap-icon://action-settings" tooltip="Settings" />
+    </headerContent>
+    <Table id="ordersTable" items="{/orders}" headerText="Orders">
+      <headerToolbar>
+        <OverflowToolbar>
+          <Title text="Orders" />
+          <ToolbarSpacer />
+          <SearchField width="14rem" placeholder="Search orders" />
+          <!-- No id on purpose: UI5 generates one like __button3 -->
+          <Button text="Create" type="Emphasized" press=".onCreate" />
+        </OverflowToolbar>
+      </headerToolbar>
+      <columns>
+        <Column><Text text="Order" /></Column>
+        <Column><Text text="Supplier" /></Column>
+        <Column hAlign="End"><Text text="Amount" /></Column>
+      </columns>
+      <items>
+        <ColumnListItem type="Navigation" press=".onOpen">
+          <ObjectIdentifier title="{id}" />
+          <Text text="{supplier}" />
+          <ObjectNumber number="{amount}" unit="EUR" />
+        </ColumnListItem>
+      </items>
+    </Table>
+  </Page>
+</mvc:View>

@@ -8,7 +8,7 @@ mkdirSync('dist', { recursive: true });
 cpSync('static', 'dist', { recursive: true });
 
 const ctx = await esbuild.context({
-  entryPoints: { background: 'src/background.ts', content: 'src/content.ts', popup: 'src/popup.ts' },
+  entryPoints: { background: 'src/background.ts', content: 'src/content.ts', popup: 'src/popup.ts', ui5bridge: 'src/ui5bridge.ts' },
   outdir: 'dist',
   bundle: true,
   format: 'iife',
