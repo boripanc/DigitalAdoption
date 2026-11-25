@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; }
+  body { width: 340px; margin: 0; font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #111827; background: #fff; }
+  header { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid #e5e7eb; }
+  header img { width: 22px; height: 22px; }
+  header b { font-size: 15px; }
+  header .host { margin-left: auto; color: #6b7280; font-size: 12px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  section { padding: 12px 14px; border-bottom: 1px solid #f3f4f6; }
+  h4 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #6b7280; }
+  .row { display: flex; gap: 6px; }
+  input { flex: 1; width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 7px 9px; font: inherit; }
+  label { display: block; font-size: 12px; color: #6b7280; margin: 8px 0 3px; }
+  button { font: inherit; border: 0; border-radius: 8px; padding: 7px 11px; cursor: pointer; background: #f3f4f6; color: #111827; }
+  button.primary { background: #e8590c; color: #fff; }
+  button.small { padding: 4px 8px; font-size: 12px; }
+  button.link { background: none; color: #6b7280; padding: 0; text-decoration: underline; font-size: 12px; }
+  button:disabled { opacity: .6; cursor: default; }
+  .flow { border: 1px solid #e5e7eb; border-radius: 10px; padding: 9px 10px; margin-bottom: 8px; }
+  .flow .top { display: flex; align-items: center; gap: 6px; }
+  .flow .name { font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .flow .meta { color: #6b7280; font-size: 12px; margin-top: 4px; display: flex; gap: 8px; align-items: center; }
+  .badge { font-size: 11px; border-radius: 999px; padding: 1px 7px; background: #f3f4f6; color: #4b5563; }
+  .badge.published { background: #dcfce7; color: #166534; }
+  .muted { color: #6b7280; }
+  .msg { color: #b91c1c; font-size: 12px; margin-top: 8px; }
+  .who { display: flex; align-items: center; gap: 8px; color: #6b7280; font-size: 12px; }
+  .who span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  details summary { cursor: pointer; color: #6b7280; font-size: 12px; margin-top: 10px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+  <header><img src="icons/icon48.png" alt=""><b>Guidepost</b><span class="host" id="host"></span></header>
+
+  <section id="signin" hidden>
+    <h4>Sign in to your workspace</h4>
+    <form id="login">
+      <label for="email">Email</label><input id="email" type="email" autocomplete="username" required>
+      <label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required>
+      <details><summary>Server settings</summary>
+        <label for="apiUrl">API URL</label><input id="apiUrl" type="url" required>
+        <label for="dashboardUrl">Dashboard URL</label><input id="dashboardUrl" type="url" required>
+      </details>
+      <div class="row" style="margin-top:12px"><button class="primary" type="submit" id="loginBtn" style="flex:1">Sign in</button></div>
+      <div class="msg" id="loginMsg" hidden></div>
+    </form>
+    <p class="muted">No account yet? <button class="link" id="createWs">Create a workspace</button> in the dashboard.</p>
+  </section>
+
+  <div id="app" hidden>
+    <section id="recordBox" hidden>
+      <h4>Record a new guide</h4>
+      <div class="row"><input id="name" placeholder="Guide name, e.g. Create an invoice"><button class="primary" id="record">Record</button></div>
+    </section>
+    <section>
+      <h4>Guides on this site</h4>
+      <div id="flows"><div class="muted">Loading…</div></div>
+      <div class="msg" id="msg" hidden></div>
+    </section>
+    <section class="who"><span id="who"></span><button class="link" id="dashboard">Dashboard</button><button class="link" id="logout">Sign out</button></section>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
