@@ -27,7 +27,7 @@ async function waitHttp(url) {
   throw new Error(`timed out waiting for ${url}`);
 }
 const run = (cmd, args, env = {}) => {
-  const p = spawn(cmd, args, { cwd: root, env: { ...process.env, ...env }, stdio: 'ignore' });
+  const p = spawn(cmd, args, { cwd: root, env: { ...process.env, ...env }, stdio: 'ignore', detached: true });
   procs.push(p);
 };
 
@@ -186,6 +186,6 @@ try {
   process.exitCode = 1;
 } finally {
   await ctx?.close().catch(() => {});
-  for (const p of procs) p.kill();
+  for (const p of procs) try { process.kill(-p.pid); } catch {} // whole process group, so the API started by npx stops too
   process.exit();
 }

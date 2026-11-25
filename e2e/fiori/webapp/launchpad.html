@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<!-- A stand-in for an iframe-based Fiori launchpad: a shell page that routes by hash
+     (#Shell-home, #PurchaseOrder-manage) and opens the app in a same-origin iframe. -->
+<head>
+  <meta charset="utf-8">
+  <title>Home</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #f5f6f7; }
+    header { height: 48px; display: flex; align-items: center; gap: 16px; padding: 0 16px; background: #fff; border-bottom: 1px solid #ddd; }
+    header a { color: #0a6ed1; text-decoration: none; }
+    .tiles { padding: 24px; display: flex; gap: 16px; }
+    .tile { width: 176px; height: 176px; background: #fff; border-radius: 16px; box-shadow: 0 0 0 1px #ddd; padding: 16px; box-sizing: border-box; cursor: pointer; }
+    .tile h2 { font-size: 16px; margin: 0; }
+    iframe { border: 0; width: 100%; height: calc(100vh - 49px); display: block; }
+  </style>
+</head>
+<body>
+  <header><a href="#Shell-home" id="shellHome">Home</a><span id="shellTitle"></span></header>
+  <main id="main"></main>
+  <script>
+    function route() {
+      const main = document.getElementById('main');
+      const intent = location.hash.replace(/^#/, '').split('&')[0] || 'Shell-home';
+      if (intent === 'PurchaseOrder-manage') {
+        document.getElementById('shellTitle').textContent = 'Manage Purchase Orders';
+        if (!document.getElementById('application-PurchaseOrder-manage')) {
+          main.innerHTML = '';
+          const f = document.createElement('iframe');
+          f.id = 'application-PurchaseOrder-manage';
+          f.className = 'sapUShellApplicationContainer';
+          f.src = 'index.html' + location.search;
+          main.appendChild(f);
+        }
+      } else {
+        document.getElementById('shellTitle').textContent = '';
+        main.innerHTML = '<div class="tiles"><div class="tile" role="link" tabindex="0" data-intent="PurchaseOrder-manage"><h2>Manage Purchase Orders</h2></div></div>';
+        main.querySelector('.tile').onclick = () => { location.hash = '#PurchaseOrder-manage'; };
+      }
+    }
+    addEventListener('hashchange', route);
+    route();
+  </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<mvc:View xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m" controllerName="po.controller.Detail">
+  <Page id="detailPage" title="{id}" showNavButton="true" navButtonPress=".onBack">
+    <VBox class="sapUiSmallMargin">
+      <ObjectHeader title="{supplier}" number="{amount}" numberUnit="EUR" />
+      <Label text="Approval note" labelFor="note" />
+      <Input id="note" value="{note}" placeholder="Why is this order OK?" />
+    </VBox>
+    <footer>
+      <OverflowToolbar>
+        <ToolbarSpacer />
+        <Button text="Approve" type="Accept" press=".onApprove" />
+        <Button text="Reject" type="Reject" press=".onReject" />
+      </OverflowToolbar>
+    </footer>
+  </Page>
+</mvc:View>

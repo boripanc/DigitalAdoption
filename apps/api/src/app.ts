@@ -25,6 +25,20 @@ const stepSchema = z.object({
   url: z.string().max(2000).default(''),
   title: z.string().min(1).max(200),
   body: z.string().max(5000).default(''),
+  frames: z.array(z.string().max(2000)).max(10).optional(),
+  ui5: z
+    .object({
+      type: z.string().max(200),
+      id: z.string().max(500).optional(),
+      view: z.string().max(500).optional(),
+      text: z.string().max(200).optional(),
+      icon: z.string().max(500).optional(),
+      tooltip: z.string().max(200).optional(),
+      label: z.string().max(200).optional(),
+      bindings: z.record(z.string().max(50), z.string().max(500)).optional(),
+      context: z.string().max(500).optional(),
+    })
+    .optional(),
 });
 const flowCreate = z.object({
   name: z.string().min(1).max(200),

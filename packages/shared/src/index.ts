@@ -14,6 +14,36 @@ export interface Step {
   url: string;
   title: string;
   body: string;
+  /**
+   * Same-origin iframes to go through to reach the element, outermost first: one CSS selector per
+   * iframe. Empty or missing when the element is in the top page. (Fiori launchpads often open apps in an iframe.)
+   */
+  frames?: string[];
+  /** What the element is in SAPUI5 / OpenUI5 terms, recorded on UI5 apps such as SAP Fiori. */
+  ui5?: Ui5Info;
+}
+
+/**
+ * A UI5 control described by things that survive reloads, used to find it again when the
+ * generated DOM ids (like "__button12" or "__xmlview0--save") change.
+ */
+export interface Ui5Info {
+  /** Control class, e.g. "sap.m.Button". */
+  type: string;
+  /** Stable part of the control id, e.g. "list--save", when the developer gave it one. */
+  id?: string;
+  /** View the control lives in, e.g. "my.app.view.List". */
+  view?: string;
+  /** Text, title or placeholder. */
+  text?: string;
+  icon?: string;
+  tooltip?: string;
+  /** Text of the label pointing at the control. */
+  label?: string;
+  /** Model paths of bound properties, e.g. { value: "note" }. */
+  bindings?: Record<string, string>;
+  /** Binding context path, e.g. "/orders/1". */
+  context?: string;
 }
 
 export interface Flow {

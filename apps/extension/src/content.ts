@@ -1,7 +1,8 @@
 // Content script: the recorder and the player, both running inside the target page.
 import type { Flow, Step, TrackEvent } from '@guidepost/shared';
 import { ask, type TabCommand, type TabHello } from './messages';
-import { buildSelector, findElement, textOf } from './selector';
+import { allFrames, topRect } from './frames';
+import { describeTarget, findElement } from './selector';
 import { actionOf, escapeHtml, h, isOurs, mount, placeCard, shadow, toast, ui } from './ui';
 
 const host = location.host || 'local-file';
@@ -106,6 +107,13 @@ async function cancelRecording() {
 
 const recording = () => !!(rec && recUI && !rec.paused && !bypass);
 
+/** Where the overlay should draw for a hovered element: the UI5 control's root on Fiori apps. */
+let hoverCache: { el: Element; root: Element } | null = null;
+function hoverRoot(el: Element) {
+  if (hoverCache?.el !== el) hoverCache = { el, root: describeTarget(el).el };
+  return hoverCache.root;
+}
+
 function showHover(r: DOMRect) {
   Object.assign(recUI!.hover.style, { display: 'block', top: `${r.top - 2}px`, left: `${r.left - 2}px`, width: `${r.width + 4}px`, height: `${r.height + 4}px` });
 }
@@ -116,7 +124,7 @@ function onHover(e: MouseEvent) {
     if (!editing) recUI.hover.style.display = 'none';
     return;
   }
-  showHover((e.target as Element).getBoundingClientRect());
+  showHover(topRect(hoverRoot(e.target as Element)));
 }
 
 function swallow(e: Event) {
@@ -126,17 +134,20 @@ function swallow(e: Event) {
   if (e.type === 'click' && !editing) openStepEditor(e.target as Element);
 }
 
-function openStepEditor(target: Element) {
+function openStepEditor(clicked: Element) {
   if (!rec) return;
   editing = true;
-  const selector = buildSelector(target);
-  const text = textOf(target);
-  const rect = target.getBoundingClientRect();
+  const { el: target, ...where } = describeTarget(clicked);
+  const { selector, text } = where;
+  const rect = topRect(target);
   const n = rec.steps.length + 1;
+  const label = where.ui5
+    ? `${where.ui5.type}${where.ui5.id ? ` #${where.ui5.id}` : ''}${where.ui5.text ? ` “${where.ui5.text}”` : ''}`
+    : selector;
   const card = h(`<div class="card editor">
     <button class="x" data-a="discard" title="Discard">×</button>
     <h3>Step ${n}</h3>
-    <div class="target">${escapeHtml(selector)}</div>
+    <div class="target" title="${escapeHtml(selector)}">${escapeHtml(label)}${where.frames ? ' · in frame' : ''}</div>
     <label>Title</label><input class="t" value="${escapeHtml(text ? `Click “${text.slice(0, 40)}”` : 'Click here')}">
     <label>Explanation</label><textarea class="b" placeholder="What should the user do here, and why?"></textarea>
     <div class="row" style="margin-top:12px">
@@ -156,7 +167,7 @@ function openStepEditor(target: Element) {
     const a = actionOf(e);
     if (!a || !rec) return;
     if (a !== 'discard') {
-      rec.steps.push({ selector, text, tag: target.tagName.toLowerCase(), url: location.href, title: title.value.trim() || `Step ${n}`, body: body.value.trim() });
+      rec.steps.push({ ...where, url: location.href, title: title.value.trim() || `Step ${n}`, body: body.value.trim() });
       await saveRec();
     }
     card.remove();
@@ -167,8 +178,7 @@ function openStepEditor(target: Element) {
       // click() dispatches synchronously, so the bypass covers exactly this one click.
       bypass = true;
       try {
-        (target as HTMLElement).focus?.();
-        (target as HTMLElement).click();
+        realClick(clicked);
       } finally {
         bypass = false;
       }
@@ -176,8 +186,35 @@ function openStepEditor(target: Element) {
   });
 }
 
-for (const t of ['pointerdown', 'mousedown', 'mouseup', 'pointerup', 'click', 'dblclick', 'submit']) window.addEventListener(t, swallow, true);
-window.addEventListener('mousemove', onHover, true);
+/**
+ * A full pointer + mouse + click sequence. Frameworks such as UI5 react to mousedown/mouseup
+ * ("tap") rather than to click alone, so el.click() isn't enough there.
+ */
+function realClick(el: Element) {
+  const win = (el.ownerDocument.defaultView ?? window) as Window & typeof globalThis;
+  const r = el.getBoundingClientRect();
+  const at = { bubbles: true, cancelable: true, composed: true, view: win, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, button: 0 };
+  el.dispatchEvent(new win.PointerEvent('pointerdown', { ...at, pointerType: 'mouse', isPrimary: true, buttons: 1 }));
+  el.dispatchEvent(new win.MouseEvent('mousedown', { ...at, buttons: 1 }));
+  (el as HTMLElement).focus?.();
+  el.dispatchEvent(new win.PointerEvent('pointerup', { ...at, pointerType: 'mouse', isPrimary: true }));
+  el.dispatchEvent(new win.MouseEvent('mouseup', at));
+  el.dispatchEvent(new win.MouseEvent('click', at));
+}
+
+// Listen in the top page and in every same-origin iframe, including ones that appear later
+// (a launchpad opens an app's iframe after you click its tile).
+const hooked = new WeakSet<Window>();
+function hookFrames() {
+  for (const { win } of allFrames()) {
+    if (hooked.has(win)) continue;
+    hooked.add(win);
+    for (const t of ['pointerdown', 'mousedown', 'mouseup', 'pointerup', 'click', 'dblclick', 'submit']) win.addEventListener(t, swallow, true);
+    win.addEventListener('mousemove', onHover, true);
+  }
+}
+hookFrames();
+setInterval(hookFrames, 1000);
 
 // =====================================================================
 // PLAYER
@@ -189,6 +226,8 @@ interface Play {
   spot?: HTMLElement;
   card?: HTMLElement;
   raf?: number;
+  /** Polling for a step's element that hasn't appeared yet. */
+  timer?: number;
   cleanup?: () => void;
 }
 let play: Play | null = null;
@@ -216,20 +255,65 @@ async function showStep() {
   const target = await waitFor(step, 6000);
   if (play !== p || p.flow.steps[p.index] !== step) return; // the user moved on meanwhile
   track(p.flow.id, p.sessionId, 'step_view', p.index);
-  if (!target) return showMissing(step);
+  if (!target) {
+    showMissing(step);
+    // Single-page apps (Fiori routes, launchpad iframes still loading) can show the element later
+    // without a page load, so keep looking while the "can't find it" card is up.
+    p.timer = window.setInterval(() => {
+      if (play !== p || p.flow.steps[p.index] !== step) return;
+      const el = findElement(step);
+      if (el) {
+        clearStepUI();
+        highlight(p, step, el);
+      }
+    }, 700);
+    return;
+  }
+  highlight(p, step, target);
+}
+
+function highlight(p: Play, step: Step, first: Element) {
+  let target = first;
   target.scrollIntoView({ block: 'center', behavior: 'smooth' });
   p.spot = h('<div class="spot"></div>');
   p.card = buildCard(step);
   ui.append(p.spot, p.card);
-  // Clicking the highlighted element itself also moves the tour on.
-  const onTargetClick = () => setTimeout(() => play === p && next(), 150);
-  target.addEventListener('click', onTargetClick, { once: true });
-  p.cleanup = () => target.removeEventListener('click', onTargetClick);
+  // Clicking the highlighted element itself also moves the tour on. Listen on the document rather
+  // than the element, because UI5 re-renders controls and replaces their DOM nodes.
+  let clicked = false;
+  const onClick = (e: Event) => {
+    if (clicked || !(e.target instanceof (target.ownerDocument.defaultView ?? window).Node) || !target.contains(e.target as Node)) return;
+    clicked = true;
+    setTimeout(() => play === p && next(), 150);
+  };
+  let doc = target.ownerDocument;
+  doc.addEventListener('click', onClick, true);
+  p.cleanup = () => doc.removeEventListener('click', onClick, true);
+  let lost = 0;
   const follow = () => {
     if (play !== p || !p.spot || !p.card) return;
-    const r = target.getBoundingClientRect();
-    Object.assign(p.spot.style, { top: `${r.top - 4}px`, left: `${r.left - 4}px`, width: `${r.width + 8}px`, height: `${r.height + 8}px` });
-    placeCard(p.card, r);
+    if (!target.isConnected) {
+      // Re-rendered or navigated away: look for it again, at most every few frames.
+      if (lost++ % 10 === 0) {
+        const again = findElement(step);
+        if (again) {
+          target = again;
+          if (again.ownerDocument !== doc) {
+            p.cleanup?.();
+            doc = again.ownerDocument;
+            doc.addEventListener('click', onClick, true);
+            p.cleanup = () => doc.removeEventListener('click', onClick, true);
+          }
+        }
+      }
+      p.spot.style.display = 'none';
+    } else {
+      lost = 0;
+      p.spot.style.display = '';
+      const r = topRect(target);
+      Object.assign(p.spot.style, { top: `${r.top - 4}px`, left: `${r.left - 4}px`, width: `${r.width + 8}px`, height: `${r.height + 8}px` });
+      placeCard(p.card, r);
+    }
     p.raf = requestAnimationFrame(follow);
   };
   follow();
@@ -262,7 +346,9 @@ function buildCard(step: Step, extra = '') {
 function showMissing(step: Step) {
   let otherPage = false;
   try {
-    otherPage = !!step.url && new URL(step.url).pathname !== location.pathname;
+    // Hash routes count as pages too (Fiori: #PurchaseOrder-manage&/orders/1).
+    const u = new URL(step.url);
+    otherPage = !!step.url && (u.pathname !== location.pathname || u.hash !== location.hash);
   } catch { /* bad url */ }
   const extra = otherPage
     ? '<p class="warn">This step is on another page.</p><div class="row" style="margin-bottom:10px"><button data-a="goto">Take me there</button></div>'
@@ -306,10 +392,11 @@ function back() {
 function clearStepUI() {
   if (!play) return;
   if (play.raf) cancelAnimationFrame(play.raf);
+  if (play.timer) clearInterval(play.timer);
   play.cleanup?.();
   play.spot?.remove();
   play.card?.remove();
-  play.spot = play.card = play.cleanup = undefined;
+  play.spot = play.card = play.cleanup = play.raf = play.timer = undefined;
 }
 
 function stopPlayer(clearStored: boolean) {
