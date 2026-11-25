@@ -1,6 +1,13 @@
 import { buildApp } from './app.js';
 import { createDb } from './db.js';
 
+// Load apps/api/.env when present (Node 21.7+); real environment variables win.
+try {
+  process.loadEnvFile();
+} catch {
+  /* no .env file */
+}
+
 const port = Number(process.env.PORT ?? 4000);
 const jwtSecret = process.env.JWT_SECRET ?? '';
 if (jwtSecret.length < 32) {

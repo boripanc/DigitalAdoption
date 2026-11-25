@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Acme Invoicing (demo app)</title>
+<style>
+  body { margin: 0; font: 14px/1.5 system-ui, sans-serif; background: #f5f6f8; color: #1f2937; }
+  nav { display: flex; gap: 18px; align-items: center; background: #1e3a5f; color: #fff; padding: 12px 24px; }
+  nav a { color: #cfe0f5; text-decoration: none; }
+  nav .brand { font-weight: 700; color: #fff; margin-right: 12px; }
+  main { max-width: 760px; margin: 32px auto; background: #fff; border-radius: 10px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .toolbar { display: flex; justify-content: space-between; align-items: center; }
+  button { font: inherit; padding: 8px 14px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; }
+  button.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+  form { display: none; margin-top: 20px; gap: 12px; flex-direction: column; }
+  form.open { display: flex; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #475569; }
+  input, select { font: inherit; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+  td, th { text-align: left; padding: 8px; border-bottom: 1px solid #e2e8f0; }
+</style>
+</head>
+<body>
+  <nav><span class="brand">Acme Invoicing</span><a href="#">Dashboard</a><a href="#" id="nav-invoices">Invoices</a><a href="#">Customers</a><a href="#">Settings</a></nav>
+  <main>
+    <div class="toolbar"><h2>Invoices</h2><button class="primary" data-testid="new-invoice">New invoice</button></div>
+    <form id="invoice-form" onsubmit="event.preventDefault(); addRow();">
+      <label>Customer<select name="customer"><option>Globex</option><option>Initech</option><option>Umbrella</option></select></label>
+      <label>Amount (USD)<input name="amount" type="number" placeholder="0.00"></label>
+      <label>Due date<input name="due" type="date"></label>
+      <div><button class="primary" type="submit">Save invoice</button></div>
+    </form>
+    <table><thead><tr><th>Customer</th><th>Amount</th><th>Due</th></tr></thead><tbody id="rows"><tr><td>Globex</td><td>$1,200</td><td>2026-12-01</td></tr></tbody></table>
+  </main>
+<script>
+  document.querySelector('[data-testid="new-invoice"]').addEventListener('click', () => document.getElementById('invoice-form').classList.add('open'));
+  function addRow() {
+    const f = document.getElementById('invoice-form');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${f.customer.value}</td><td>$${f.amount.value || 0}</td><td>${f.due.value || '-'}</td>`;
+    document.getElementById('rows').appendChild(tr);
+    f.classList.remove('open');
+  }
+</script>
+</body>
+</html>

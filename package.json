@@ -2,7 +2,10 @@
   "name": "guidepost",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*", "apps/*"],
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
     "dev:api": "npm run dev -w @guidepost/api",
     "dev:dashboard": "npm run dev -w @guidepost/dashboard",
@@ -12,7 +15,10 @@
     "test:e2e": "node e2e/extension.e2e.mjs"
   },
   "devDependencies": {
+    "playwright": "^1.63.0",
     "typescript": "^5.9.3"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }
