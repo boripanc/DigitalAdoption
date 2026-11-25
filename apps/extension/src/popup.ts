@@ -106,6 +106,30 @@ $('logout').addEventListener('click', async () => {
   await ask({ kind: 'logout' });
   void init();
 });
+// A recording or guide that's running in another tab (or whose tab was closed) can continue here,
+// for example when the next step is in an app the user opened themselves.
+async function renderElsewhere() {
+  const r = await ask({ kind: 'guideStatus' });
+  const st = r.ok ? r.data : null;
+  const show = !!st?.state && st.tabId !== tabId;
+  $('elsewhere').hidden = !show;
+  if (!show || !st?.state) return;
+  const where = st.tabId === undefined ? 'its tab was closed' : 'in another tab';
+  $('elsewhereText').textContent = st.state.recording
+    ? `Recording "${st.state.recording.name}" (${st.state.recording.steps.length} steps), ${where}.`
+    : `A guide is playing, ${where}.`;
+  $<HTMLButtonElement>('here').disabled = !tabReady;
+}
+$('here').addEventListener('click', async () => {
+  if (tabId === undefined) return;
+  await ask({ kind: 'guideHere', tabId });
+  window.close();
+});
+$('stopGuide').addEventListener('click', async () => {
+  await ask({ kind: 'guideStop' });
+  void renderElsewhere();
+});
+
 $('dashboard').addEventListener('click', () => chrome.tabs.create({ url: session.dashboardUrl }));
 $('createWs').addEventListener('click', () => chrome.tabs.create({ url: `${$<HTMLInputElement>('dashboardUrl').value.replace(/\/$/, '')}/#/signup` }));
 
@@ -125,7 +149,7 @@ async function init() {
   $('recordBox').hidden = !canEdit(session.user!.role);
   $<HTMLButtonElement>('record').disabled = !tabReady;
   if (!tabReady && host) showMsg('msg', 'Reload this page once so Guidepost can run on it.');
-  await renderFlows();
+  await Promise.all([renderFlows(), renderElsewhere()]);
 }
 
 (async () => {

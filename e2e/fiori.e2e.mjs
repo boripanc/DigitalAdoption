@@ -200,6 +200,43 @@ try {
   await frame.locator('.sapMBtn:has-text("Approve")').click();
   await app.waitForFunction(() => document.querySelector('#guidepost-root')?.shadowRoot.querySelector('.toast')?.textContent.includes('You finished'));
   check(true, 'guide finishes across the launchpad page and the app iframe');
+
+  // ---------------------------------------------------------------
+  // C. Launchpad on one origin, app iframe on another (localhost vs 127.0.0.1)
+  // ---------------------------------------------------------------
+  const XO = 'http://127.0.0.1:8766';
+  await app.goto(`${UI5}/launchpad.html?appOrigin=${encodeURIComponent(XO)}#Shell-home`);
+  await record('Approve from another domain');
+  await app.click('.tile');
+  await step('Open the app tile', 'saveclick');
+  const xFrame = app.frameLocator('#application-PurchaseOrder-manage');
+  await xFrame.locator('.sapMListTblRow').first().waitFor({ timeout: 60_000 });
+  await xFrame.locator('.sapMListTblRow:has-text("PO-1001")').click();
+  const xLabel = await app.waitForFunction(() => document.querySelector('#guidepost-root')?.shadowRoot.querySelector('.card.editor .target')?.textContent, null, { timeout: 10_000 }).then((h) => h.jsonValue());
+  check(xLabel.startsWith('sap.m.ColumnListItem') && xLabel.includes('in 127.0.0.1:8766'), `recorder captures UI5 clicks inside a cross-origin app iframe (${xLabel})`);
+  await step('Open the order', 'saveclick');
+  await xFrame.locator('button:has-text("Approve")').waitFor();
+  check(true, 'Save & click performs the click inside the cross-origin iframe');
+  await xFrame.locator('button:has-text("Approve")').click();
+  await sh('.card.editor').waitFor();
+  await step('Approve it', 'save');
+  const flowC = await finish('Approve from another domain');
+  check(flowC.steps[1].frameOrigin === XO && flowC.steps[2].frameOrigin === XO && !flowC.steps[0].frameOrigin, 'steps in the cross-origin iframe are stored with its origin');
+
+  await app.goto(`${UI5}/launchpad.html?shift=7&appOrigin=${encodeURIComponent(XO)}#Shell-home`);
+  await sleep(500);
+  await play('Approve from another domain');
+  await expectStep(1, app, '.tile', 'the launchpad tile');
+  await app.click('.tile');
+  const xf = app.frameLocator('#application-PurchaseOrder-manage');
+  await expectStep(2, xf, '.sapMListTblRow:has-text("PO-1001")', 'the PO-1001 row inside the cross-origin iframe');
+  await app.screenshot({ path: `${shots}/fiori-cross-origin-playback.png` });
+  await xf.locator('.sapMListTblRow:has-text("PO-1001")').click();
+  await expectStep(3, xf, '.sapMBtn:has-text("Approve")', 'the Approve button inside the cross-origin iframe');
+  await xf.locator('.sapMBtn:has-text("Approve")').click();
+  await app.waitForFunction(() => document.querySelector('#guidepost-root')?.shadowRoot.querySelector('.toast')?.textContent.includes('You finished'));
+  const approvedX = await app.frames().find((f) => f.url().startsWith(XO))?.evaluate(() => window.__approved);
+  check(approvedX === 1, 'guide finishes in a launchpad whose app iframe is on another domain');
   console.log('\nAll Fiori end-to-end checks passed.');
 } catch (e) {
   console.error(e);

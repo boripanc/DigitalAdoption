@@ -14,6 +14,7 @@
     "test": "npm run test --workspaces --if-present",
     "test:e2e": "node e2e/extension.e2e.mjs",
     "test:e2e:fiori": "node e2e/fiori.e2e.mjs",
+    "test:e2e:crossapp": "node e2e/crossapp.e2e.mjs",
     "fiori:serve": "cd e2e/fiori && ui5 serve --port 8766"
   },
   "devDependencies": {

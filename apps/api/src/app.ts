@@ -26,6 +26,7 @@ const stepSchema = z.object({
   title: z.string().min(1).max(200),
   body: z.string().max(5000).default(''),
   frames: z.array(z.string().max(2000)).max(10).optional(),
+  frameOrigin: z.string().max(300).regex(/^https?:\/\/[^/]+$/).optional(),
   ui5: z
     .object({
       type: z.string().max(200),

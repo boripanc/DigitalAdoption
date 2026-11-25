@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+<!-- The portal again, now showing the expenses app inside the page: a same-origin wrapper iframe
+     that holds the expenses app from another origin (top → same-origin frame → cross-origin frame). -->
+<head>
+  <meta charset="utf-8">
+  <title>Employee Portal · Expenses</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #eef2f7; }
+    header { background: #12355b; color: #fff; padding: 14px 20px; font-size: 18px; }
+    iframe { display: block; margin: 30px 0 0 60px; width: 900px; height: 600px; border: 4px solid #12355b; }
+  </style>
+</head>
+<body>
+  <header>Employee Portal</header>
+  <iframe id="shell" src="wrapper.html"></iframe>
+</body>
+</html>
